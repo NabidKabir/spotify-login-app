@@ -20,11 +20,7 @@ const scopes = ['user-read-currently-playing'];
 
 function App() {
   const [token, setToken] = useState('')
-
-  const getToken = () => {
-    var urlParams = new URLSearchParams(window.location.hash.replace('#', '?'))
-    return urlParams.get('access_token')
-  }
+  const [currentTrack, setCurrentTrack] = useState(null)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -39,14 +35,27 @@ function App() {
     }
 
     setToken(token)
-  }, [])
+    currentlyPlaying()
+  }, [token])
 
   const logout = () => {
     setToken('')
     window.localStorage.removeItem('token')
   }
 
-  console.log(token)
+  async function currentlyPlaying(){
+    var params = {
+      method: 'GET',
+      headers: {
+        'Authorization': 'Bearer ' + token
+      }
+    }
+
+    var currentPlay = await fetch('https://api.spotify.com/v1/me/player/currently-playing', params)
+      .then(response => response.json())
+      .then(data => {setCurrentTrack(data)})
+  }
+
 
   return (
     <div className="App">
@@ -58,6 +67,7 @@ function App() {
           : <Button 
             onClick={logout}
             className='btn btn-danger'>Logout</Button>}
+
       </Container>
     </div>
   );
