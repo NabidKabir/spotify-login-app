@@ -17,7 +17,7 @@ var spotify = new SpotifyWebApi()
 
 function App() {
   const [token, setToken] = useState('')
-  const [currentTrack, setCurrentTrack] = useState([])
+  const [currentTrack, setCurrentTrack] = useState([null])
 
 
   useEffect(() => {
@@ -34,7 +34,6 @@ function App() {
 
     setToken(token)
     spotify.setAccessToken(token)
-    console.log(spotify.getAccessToken())
   }, [])
 
   const logout = () => {
@@ -42,52 +41,23 @@ function App() {
     window.localStorage.removeItem('token')
   }
 
-  async function currentlyPlaying() {
-    try {
-      var params = {
-        method: 'GET',
-        headers: {
-
-          'Authorization': 'Bearer ' + token
-        }
-      }
-
-      var response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', params);
-
-      if (!response.ok) {
-        // Check if the response is not successful (HTTP status code outside the 200-299 range)
-        throw new Error('Network response was not ok');
-      }
-
-      const data = await response.json();
-
-      if (data && data.item) {
-        setCurrentTrack(data.item);
-      } else {
-        setCurrentTrack(null);
-      }
-    } catch (err) {
-      console.log('Error fetching currently playing track:', err);
-      setCurrentTrack(null);
-    }
-  }
-
   useEffect(() => {
+    if(!token){
+      return
+    }
     // Fetch the currently playing track when the token changes
-    spotify.getUserPlaylists()
-    .then(
-      function(data){
-        console.log('User playlists', data)
-      },
-      function(err){
-        console.log(err)
-      }
-    )
     spotify.getMyCurrentPlayingTrack()
-    .then(data => {console.log('Currently Playing', data)
-      setCurrentTrack([data.item.album.images[0].url, data.item.artists[0].name, data.item.name])})
+    .then(data => {
+      if(data){
+        setCurrentTrack([data.item.album.images[0].url, data.item.artists[0].name, data.item.name])
+      }
+      else{
+        return
+      }
+    }
+    )
   }
-  ,[])
+  )
 
   return (
     <div className="App">
@@ -101,11 +71,18 @@ function App() {
           <Button 
             onClick={logout}
             className='btn btn-danger'>Logout</Button>
+            {currentTrack.length !== 1 ?
+            <Container>
             <h1 className='mx-auto'>Here is what you are playing!</h1>
             <Card style={{ width: '25rem' }} className='mt-4 mx-auto'>
               <Card.Img src = {currentTrack[0]}/>
               <Card.Title>{'' + currentTrack[1] + ' - ' + currentTrack[2]}</Card.Title>
             </Card>
+            </Container>
+            :
+            <h1>Nothing is playing! Play something and refresh!</h1>
+            }
+            
           </Container>
           }
 
