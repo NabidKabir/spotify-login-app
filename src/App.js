@@ -1,6 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
-import {Container, Button } from 'react-bootstrap';
+import {Container, Button, Card } from 'react-bootstrap';
 import {useEffect, useState} from 'react';
 import SpotifyWebApi from 'spotify-web-api-js';
 
@@ -17,7 +17,8 @@ var spotify = new SpotifyWebApi()
 
 function App() {
   const [token, setToken] = useState('')
-  const [currentTrack, setCurrentTrack] = useState(null)
+  const [currentTrack, setCurrentTrack] = useState([])
+
 
   useEffect(() => {
     const hash = window.location.hash
@@ -83,9 +84,10 @@ function App() {
       }
     )
     spotify.getMyCurrentPlayingTrack()
-    .then(data => {console.log('Currently Playing', data)})
+    .then(data => {console.log('Currently Playing', data)
+      setCurrentTrack([data.item.album.images[0].url, data.item.artists[0].name, data.item.name])})
   }
-  )
+  ,[])
 
   return (
     <div className="App">
@@ -94,9 +96,18 @@ function App() {
           <Button 
             href={`${AUTH_ENDPOINT}?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=${RESPONSE_TYPE}&scope=${scopes}`} 
             className='btn btn-success'>Login</Button>
-          : <Button 
+          : 
+          <Container>
+          <Button 
             onClick={logout}
-            className='btn btn-danger'>Logout</Button>}
+            className='btn btn-danger'>Logout</Button>
+            <h1 className='mx-auto'>Here is what you are playing!</h1>
+            <Card style={{ width: '25rem' }} className='mt-4 mx-auto'>
+              <Card.Img src = {currentTrack[0]}/>
+              <Card.Title>{'' + currentTrack[1] + ' - ' + currentTrack[2]}</Card.Title>
+            </Card>
+          </Container>
+          }
 
       </Container>
     </div>
