@@ -2,6 +2,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import {Container, Button } from 'react-bootstrap';
 import {useEffect, useState} from 'react';
+import SpotifyWebApi from 'spotify-web-api-js';
 
 const CLIENT_ID = process.env.REACT_APP_CLIENT_ID;
 const CLIENT_SECRET = process.env.REACT_APP_CLIENT_SECRET;
@@ -11,11 +12,7 @@ const RESPONSE_TYPE = 'token'
 
 const scopes = ['user-read-currently-playing'];
 
-
-
-
-
-
+var spotify = new SpotifyWebApi()
 
 
 function App() {
@@ -35,27 +32,60 @@ function App() {
     }
 
     setToken(token)
-    currentlyPlaying()
-  }, [token])
+    spotify.setAccessToken(token)
+    console.log(spotify.getAccessToken())
+  }, [])
 
   const logout = () => {
     setToken('')
     window.localStorage.removeItem('token')
   }
 
-  async function currentlyPlaying(){
-    var params = {
-      method: 'GET',
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    }
+  async function currentlyPlaying() {
+    try {
+      var params = {
+        method: 'GET',
+        headers: {
 
-    var currentPlay = await fetch('https://api.spotify.com/v1/me/player/currently-playing', params)
-      .then(response => response.json())
-      .then(data => {setCurrentTrack(data)})
+          'Authorization': 'Bearer ' + token
+        }
+      }
+
+      var response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', params);
+
+      if (!response.ok) {
+        // Check if the response is not successful (HTTP status code outside the 200-299 range)
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+
+      if (data && data.item) {
+        setCurrentTrack(data.item);
+      } else {
+        setCurrentTrack(null);
+      }
+    } catch (err) {
+      console.log('Error fetching currently playing track:', err);
+      setCurrentTrack(null);
+    }
   }
 
+  useEffect(() => {
+    // Fetch the currently playing track when the token changes
+    spotify.getUserPlaylists()
+    .then(
+      function(data){
+        console.log('User playlists', data)
+      },
+      function(err){
+        console.log(err)
+      }
+    )
+    spotify.getMyCurrentPlayingTrack()
+    .then(data => {console.log('Currently Playing', data)})
+  }
+  )
 
   return (
     <div className="App">
